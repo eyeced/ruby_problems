@@ -1,8 +1,7 @@
 class PeakTraffic
   class DiGraph
     # initialize with number of vertices and also create the adjacency list with these vertices
-    def initialize(v)
-      @v = v
+    def initialize
       # adjacency list for all vertices
       @adjacency_list = []
       # mapping of vertices to the index, index would be used as the vertex number, this is for performance only
@@ -29,9 +28,13 @@ class PeakTraffic
 
     # reverse the di graph this would be used in computing the strong components
     def reverse
-      reverseDiGraph = DiGraph.new(@v)
+      reverseDiGraph = DiGraph.new
       @vertices.each {|x| adj(x).each { |y| reverseDiGraph.add_edge(y, x) } }
       reverseDiGraph
+    end
+
+    def connected?(x, y)
+      adj(x).include?(y) && adj(y).include?(x)
     end
 
     # print the graph
@@ -105,9 +108,9 @@ class PeakTraffic
     end
   end
 
-  v = %w{a b c d e f g h i j k l m}
+  graph = DiGraph.new
+  # read in the file and add edges to the graph
 
-  graph = DiGraph.new(13)
   graph.add_edge(v[4], v[2])
   graph.add_edge(v[2], v[3])
   graph.add_edge(v[3], v[2])
@@ -131,9 +134,26 @@ class PeakTraffic
   graph.add_edge(v[6], v[9])
   graph.add_edge(v[7], v[6])
 
-  graph.print
-  puts('vertices  ' + graph.vertices.join('-'))
+  # initialize the strong component computations and
+  # get the strong components array
+  strong_comps = StronglyConnectedComps.new(graph).strong_comps
+  # set the array into groups
+  groups = graph.vertices.group_by { |x| strong_comps[graph.vertices.find_index(x)] }
+  # filter out groups where group length is less than 3
+  valid_groups = (0..(groups.length - 1)).map { |i| groups[i] }.reject { |x| x.length < 3 }
+  # print the groups
+  valid_groups.each { |g| puts(g.join(', ')) }
 
-  scc = StronglyConnectedComps.new(graph)
-  puts(scc.strong_comps.join('-'))
+  def split_groups(groups, graph, acc)
+    head, *tail = groups
+    if (tail.empty?) then acc.map {|a| a.push(head)}
+    else
+      connected = tail.reject { |x| graph.connected?(head, x) }
+      if (connected.length == tail.length)
+        split_groups(tail, graph, acc.map { |a| a.push(head) })
+      else
+        split_groups(connected.insert(0, head), graph, acc) + split_groups(tail.reject { |x| !connected.include?(x) }, graph, acc)
+      end
+    end
+  end
 end
