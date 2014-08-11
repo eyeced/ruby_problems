@@ -74,17 +74,18 @@ class RepeatedString
       else
         # get the common string between the label and to be inserted str
         common = common_str(edge.label, str)
-        # create a new edge with the common str e.g if node was 'abcd$' before and we are adding 'abc$' to it then top node would be 'abc' and 'abcd$' will break
-        # into abc and d$
-        label1 = edge.label[(common.length - 1)..(edge.label.length - 1)]
-        label2 = str[(common.length - 1)..(str.length - 1)]
+        common_edge = Edge.new(common)
 
-        # now create an edge with it's end node having 2 edges
-        jedi = Edge.new(common)
-        jedi.node.add_edge(Edge.new(label1))
-        jedi.node.add_edge(Edge.new(label2))
+        # now change the searched edge label and add it to this common edge
+        common_edge.add(edge)
         node.edges.remove(edge)
-        node.add_edge(jedi)
+
+        # and add common edge to this node
+        node.add_edge(common_edge)
+
+        # recursively add the remaining string to the edge
+        label2 = str[(common.length - 1)..(str.length - 1)]
+        add(label2, common_edge.node)
       end
     end
 
