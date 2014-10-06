@@ -13,6 +13,6 @@ class DecodeStrings
     end
   end
 
-  puts(decode(%w{1 2 3 4}))
+  puts(decode(%w{1 2}))
 
 end

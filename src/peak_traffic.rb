@@ -1,4 +1,4 @@
-class PeakTraffic
+begin
   class DiGraph
     # initialize with number of vertices and also create the adjacency list with these vertices
     def initialize
@@ -23,7 +23,9 @@ class PeakTraffic
         @vertices.push(w)
         @adjacency_list[@vertices.find_index(w)] = []
       end
-      @adjacency_list[@vertices.find_index(v)].push(w)
+      if (!@adjacency_list[@vertices.find_index(v)].include?(w))
+        @adjacency_list[@vertices.find_index(v)].push(w)
+      end
     end
 
     # reverse the di graph this would be used in computing the strong components
@@ -31,10 +33,6 @@ class PeakTraffic
       reverseDiGraph = DiGraph.new
       @vertices.each {|x| adj(x).each { |y| reverseDiGraph.add_edge(y, x) } }
       reverseDiGraph
-    end
-
-    def connected?(x, y)
-      adj(x).include?(y) && adj(y).include?(x)
     end
 
     # print the graph
@@ -48,6 +46,10 @@ class PeakTraffic
 
     def index(v)
       @vertices.find_index(v)
+    end
+
+    def connected?(x, y)
+      adj(x).include?(y) and adj(y).include?(x)
     end
   end
 
@@ -73,7 +75,6 @@ class PeakTraffic
 
     # return the reverse post list
     def reverse_post
-      puts('reverse post - ' + @reverse_post.join('-'))
       @reverse_post.reverse
     end
   end
@@ -109,30 +110,13 @@ class PeakTraffic
   end
 
   graph = DiGraph.new
-  # read in the file and add edges to the graph
 
-  graph.add_edge(v[4], v[2])
-  graph.add_edge(v[2], v[3])
-  graph.add_edge(v[3], v[2])
-  graph.add_edge(v[6], v[0])
-  graph.add_edge(v[0], v[1])
-  graph.add_edge(v[2], v[0])
-  graph.add_edge(v[11], v[12])
-  graph.add_edge(v[12], v[9])
-  graph.add_edge(v[9], v[10])
-  graph.add_edge(v[9], v[11])
-  graph.add_edge(v[8], v[9])
-  graph.add_edge(v[10], v[12])
-  graph.add_edge(v[11], v[4])
-  graph.add_edge(v[4], v[3])
-  graph.add_edge(v[3], v[5])
-  graph.add_edge(v[7], v[8])
-  graph.add_edge(v[8], v[7])
-  graph.add_edge(v[5], v[4])
-  graph.add_edge(v[0], v[5])
-  graph.add_edge(v[6], v[4])
-  graph.add_edge(v[6], v[9])
-  graph.add_edge(v[7], v[6])
+  File.open(ARGV[0]).each_line do |line|
+    # Do something with line, ignore empty lines
+    #...
+    arr = line.split("\t")
+    graph.add_edge(arr[1].strip, arr[2].strip)
+  end
 
   # initialize the strong component computations and
   # get the strong components array
@@ -141,19 +125,27 @@ class PeakTraffic
   groups = graph.vertices.group_by { |x| strong_comps[graph.vertices.find_index(x)] }
   # filter out groups where group length is less than 3
   valid_groups = (0..(groups.length - 1)).map { |i| groups[i] }.reject { |x| x.length < 3 }
-  # print the groups
-  valid_groups.each { |g| puts(g.join(', ')) }
 
-  def split_groups(groups, graph, acc)
+  # print the groups
+  # valid_groups.each { |g| puts(g.sort.join(', ')) }
+
+  # valid_groups.reverse.each { |g| g.each { |x| puts(x + ' -> ' + graph.adj(x).map { |s| s.gsub('@example.com', '') }.join(' ')) } }
+
+  def split_groups(groups, graph)
     head, *tail = groups
-    if (tail.empty?) then acc.map {|a| a.push(head)}
+    if (tail.empty?)
+      [[head]]
     else
-      connected = tail.reject { |x| graph.connected?(head, x) }
+      connected = tail.reject { |x| !graph.connected?(head, x) }
       if (connected.length == tail.length)
-        split_groups(tail, graph, acc.map { |a| a.push(head) })
+        split_groups(tail, graph).map { |x| x.insert(0, head) }
       else
-        split_groups(connected.insert(0, head), graph, acc) + split_groups(tail.reject { |x| !connected.include?(x) }, graph, acc)
+        split_groups(connected.insert(0, head), graph) + split_groups((tail - connected), graph)
       end
     end
   end
+
+  split_g = []
+  valid_groups.reverse.each { |g| split_groups(g.sort_by { |x| -graph.adj(x).length }, graph).each { |y| split_g.push(y) } }
+  split_g.map { |g| if (g.length > 2) then g.sort.join(', ') end }.sort.each { |x| puts(x) }
 end
