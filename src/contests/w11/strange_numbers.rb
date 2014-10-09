@@ -33,12 +33,12 @@ class StrangeNumbers
     queue = Queue.new
     queue.push(5).push(6).push(7).push(8).push(9)
     ele = 5
-    max = 10**18
+    max = 10**19
     while (ele < max && !queue.empty?) do
       ele = queue.pop
       @@arr.add(ele)
       foo = ele.to_s.length
-      (2..(foo + 1)).each do |x|
+      (2..(foo + 2)).each do |x|
         queue.push(ele * x) if (ele * x).to_s.length == x
       end
     end
